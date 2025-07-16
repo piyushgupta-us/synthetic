@@ -1,0 +1,206 @@
+# -*- coding: utf-8 -*-
+"""
+This program generates synthetic data based on user-provided metadata and a sample API payload.
+"""
+
+import json
+import pandas as pd
+from faker import Faker
+import random
+import copy
+
+fake = Faker()
+
+def get_metadata():
+    """Accepts metadata in xls format from the user."""
+    metadata_path = input("Please provide the path to the metadata XLS file: ")
+    try:
+        metadata = pd.read_excel(metadata_path)
+        return metadata
+    except Exception as e:
+        print(f"Error reading metadata file: {e}")
+        return None
+
+def get_sample_payload():
+    """Accepts a sample API payload in Json format from the user."""
+    payload_path = input("Please provide the path to the sample API payload JSON file: ")
+    try:
+        with open(payload_path, 'r') as f:
+            payload = json.load(f)
+        return payload
+    except Exception as e:
+        print(f"Error reading sample payload file: {e}")
+        return None
+
+def get_number_of_payloads():
+    """Accepts user input for the number of new payloads to be generated."""
+    while True:
+        try:
+            num_payloads = int(input("Enter the number of new payloads to generate: "))
+            if num_payloads > 0:
+                return num_payloads
+            else:
+                print("Please enter a positive number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+def flatten_json(y, prefix=''):
+    """Flatten nested JSON into a single-level dict with dot notation keys."""
+    out = {}
+    def flatten(x, name=''):
+        if isinstance(x, dict):
+            for a in x:
+                flatten(x[a], f"{name}{a}.")
+        elif isinstance(x, list):
+            out[name[:-1]] = json.dumps(x)  # Store lists as JSON strings
+        else:
+            out[name[:-1]] = x
+    flatten(y, prefix)
+    return out
+
+def unflatten_json(d):
+    """Unflatten dict with dot notation keys to nested JSON."""
+    result_dict = {}
+    for key, value in d.items():
+        parts = key.split('.')
+        d_ref = result_dict
+        for p in parts[:-1]:
+            if p not in d_ref:
+                d_ref[p] = {}
+            d_ref = d_ref[p]
+        # Convert JSON string lists back to lists if possible
+        try:
+            val = json.loads(value)
+            d_ref[parts[-1]] = val
+        except:
+            d_ref[parts[-1]] = value
+    return result_dict
+
+def generate_faker_value(field_name, field_type, metadata_row):
+    """
+    Generate synthetic value using faker or numeric range based on field type and metadata.
+    
+    Expects metadata_row to have optional min, max, allowed_values, description columns.
+    """
+    # Try to infer useful data based on field_type
+    if pd.isna(field_type):
+        field_type = 'string'  # default
+    
+    field_type = field_type.lower()
+    
+    if field_type == 'integer' or field_type == 'int':
+        # Use min, max if given in metadata
+        min_val = metadata_row.get('min', 0)
+        max_val = metadata_row.get('max', 1000)
+        if pd.isna(min_val):
+            min_val = 0
+        if pd.isna(max_val):
+            max_val = 1000
+        return random.randint(int(min_val), int(max_val))
+    
+    if field_type == 'decimal' or field_type == 'float':
+        min_val = metadata_row.get('min', 0.0)
+        max_val = metadata_row.get('max', 1000.0)
+        if pd.isna(min_val):
+            min_val = 0.0
+        if pd.isna(max_val):
+            max_val = 1000.0
+        return round(random.uniform(float(min_val), float(max_val)), 2)
+    
+    if field_type == 'string':
+        # Use allowed_values if provided in metadata
+        allowed_values = metadata_row.get('allowed_values')
+        if pd.notna(allowed_values):
+            # Assume allowed_values is a comma separated string
+            options = [opt.strip() for opt in str(allowed_values).split(",")]
+            return random.choice(options)
+        
+        # Generate some fake values based on the field name keywords
+        fname = field_name.lower()
+        if 'name' in fname:
+            return fake.name()
+        if 'email' in fname:
+            return fake.email()
+        if 'date' in fname or 'timestamp' in fname:
+            return fake.date_time_this_decade().isoformat()
+        if 'currency' in fname:
+            return fake.currency_code()
+        if 'description' in fname:
+            return fake.sentence(nb_words=6)
+        if 'id' in fname:
+            return fake.uuid4()
+        if 'address' in fname:
+            return fake.address()
+        
+        # fallback
+        return fake.word()
+    
+    if field_type == 'boolean' or field_type == 'bool':
+        return random.choice([True, False])
+    
+    # fallback to string word for unknown types
+    return fake.word()
+
+def generate_synthetic_data(metadata, sample_payload, num_payloads):
+    """
+    Generate synthetic data based on provided metadata and sample API payload using faker.
+    """
+    synthetic_payloads = []
+    flat_sample = flatten_json(sample_payload)
+    
+    # Create metadata dictionary keyed by field name for quick lookup
+    metadata_dict = {}
+    # Expect metadata has a 'Field Name' column and 'Data Type'
+    for _, row in metadata.iterrows():
+        field_name = row.get('Field Name')
+        if field_name:
+            metadata_dict[field_name] = row
+    
+    for _ in range(num_payloads):
+        new_flat_payload = {}
+        for key in flat_sample.keys():
+            if key in metadata_dict:
+                # Generate based on metadata info
+                row = metadata_dict[key]
+
+                # Pass the complete row, assuming columns named accordingly:
+                # e.g., 'Data Type', 'min', 'max', 'allowed_values', etc.
+                gen_value = generate_faker_value(key, row.get('Data Type'), row)
+                new_flat_payload[key] = gen_value
+            else:
+                # If no metadata, fallback to original or generate simple fake
+                new_flat_payload[key] = flat_sample[key]
+        # Convert back to nested json
+        nested_payload = unflatten_json(new_flat_payload)
+        synthetic_payloads.append(nested_payload)
+        
+    return synthetic_payloads
+
+def generate_boundary_cases(metadata):
+    """Placeholder for boundary case generation."""
+    print("Boundary case generation is a complex task and metadata dependent.")
+    return []
+
+def main():
+    """Main function to run the synthetic data generator."""
+    metadata = get_metadata()
+    if metadata is None:
+        print("Failed to load metadata. Exiting.")
+        return
+
+    sample_payload = get_sample_payload()
+    if sample_payload is None:
+        print("Failed to load sample payload. Exiting.")
+        return
+
+    num_payloads = get_number_of_payloads()
+    
+    synthetic_data = generate_synthetic_data(metadata, sample_payload, num_payloads)
+    
+    with open('synthetic_data.json', 'w') as f:
+        json.dump(synthetic_data, f, indent=4)
+    
+    print("Synthetic data generated and saved to synthetic_data.json.")
+
+if __name__ == "__main__":
+    main()
