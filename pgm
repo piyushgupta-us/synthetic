@@ -1,0 +1,80 @@
+
+# -*- coding: utf-8 -*-
+"""
+This program generates synthetic data based on user-provided metadata and a sample API payload.
+"""
+
+import json
+import pandas as pd
+
+def get_metadata():
+    """Accepts metadata in xls format from the user."""
+    metadata_path = input("Please provide the path to the metadata XLS file: ")
+    try:
+        metadata = pd.read_excel(metadata_path)
+        return metadata
+    except Exception as e:
+        print(f"Error reading metadata file: {e}")
+        return None
+
+def get_sample_payload():
+    """Accepts a sample API payload in Json format from the user."""
+    payload_path = input("Please provide the path to the sample API payload JSON file: ")
+    try:
+        with open(payload_path, 'r') as f:
+            payload = json.load(f)
+        return payload
+    except Exception as e:
+        print(f"Error reading sample payload file: {e}")
+        return None
+
+def get_number_of_payloads():
+    """Accepts user input for the number of new payloads to be generated."""
+    while True:
+        try:
+            num_payloads = int(input("Enter the number of new payloads to generate: "))
+            if num_payloads > 0:
+                return num_payloads
+            else:
+                print("Please enter a positive number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+def generate_synthetic_data(metadata, sample_payload, num_payloads):
+    """Generates synthetic data based on the given metadata and sample payload."""
+    synthetic_payloads = []
+    for _ in range(num_payloads):
+        new_payload = sample_payload.copy()
+        # Here, we would apply logic to modify new_payload based on metadata
+        # For now, it's just a copy
+        synthetic_payloads.append(new_payload)
+    return synthetic_payloads
+
+def generate_boundary_cases(metadata):
+    """Generates test cases covering boundary values."""
+    boundary_cases = []
+    # This is a placeholder. Actual implementation would depend on metadata structure.
+    # For example, if metadata specifies min/max for a field, generate values at min, min+1, max-1, max.
+    # If metadata specifies a list of allowed values, generate cases for first, last, and middle values.
+    print("Boundary case generation is a complex task and requires detailed metadata definition.")
+    print("Please ensure your metadata XLS file clearly defines data types, ranges, and constraints for each field.")
+    return boundary_cases
+
+def main():
+    """Main function to run the synthetic data generator."""
+    metadata = get_metadata()
+    sample_payload = get_sample_payload()
+    num_payloads = get_number_of_payloads()
+    
+    synthetic_data = generate_synthetic_data(metadata, sample_payload, num_payloads)
+    
+    # Generate and save the output in Json format
+    with open('synthetic_data.json', 'w') as f:
+        json.dump(synthetic_data, f, indent=4)
+        
+    print("Synthetic data generated and saved to synthetic_data.json. You can download this file.")
+
+if __name__ == "__main__":
+    main()
+
+
