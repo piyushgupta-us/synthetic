@@ -1,0 +1,25 @@
+{
+  "rewardApplication": {
+    "applicationId": "app_12345678",
+    "customerId": "cust_98765432",
+    "rewardsProgramId": "rp_2025",
+    "transactionDetails": {
+      "transactionId": "txn_112233",
+      "amount": 150.75,
+      "currency": "USD",
+      "transactionDate": "2025-07-15T21:01:00Z"
+    },
+    "rewardPointsEarned": 150,
+    "rewardTierLevel": "GOLD",
+    "redeemedRewards": [
+      {
+        "rewardId": "rw_001",
+        "redeemedPoints": 100,
+        "redemptionDate": "2025-07-01T12:00:00Z",
+        "description": "10% discount on next purchase"
+      }
+    ],
+    "status": "ACTIVE",
+    "createdDate": "2025-07-01T10:30:00Z"
+  }
+}
