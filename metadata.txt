@@ -1,0 +1,17 @@
+Field Name	Data Type	Description	Example Value	Required	Notes
+applicationId	string	Unique reward application identifier	app_12345678	Yes	Alphanumeric
+customerId	string	Unique customer identifier	cust_98765432	Yes	
+rewardsProgramId	string	Identifier for the rewards program	rp_2025	Yes	
+transactionId	string	Transaction ID for the purchase	txn_112233	Yes	Nested under transactionDetails
+amount	decimal	Transaction amount	150.75	Yes	Currency specified separately
+currency	string	Currency code (ISO 4217)	USD	Yes	3-letter currency code
+transactionDate	datetime	Date/time of the transaction	2025-07-15T21:01:00Z	Yes	ISO 8601 format
+rewardPointsEarned	integer	Points earned from the transaction	150	Yes	
+rewardTierLevel	string	Tier level of the customer	GOLD	No	E.g. SILVER, GOLD, PLATINUM
+redeemedRewards	array	List of redeemed rewards	See nested structure	No	Array of reward redemption info
+rewardId	string	Identifier of redeemed reward	rw_001	Cond.	Nested in redeemedRewards
+redeemedPoints	integer	Points redeemed for a reward	100	Cond.	Nested in redeemedRewards
+redemptionDate	datetime	Date of reward redemption	2025-07-01T12:00:00Z	Cond.	ISO 8601 format
+description	string	Description of redeemed reward	10% discount on next purchase	Cond.	Nested in redeemedRewards
+status	string	Status of the reward application	ACTIVE	Yes	ACTIVE, INACTIVE, etc.
+createdDate	datetime	Creation date of the reward application	2025-07-01T10:30:00Z	Yes	ISO 8601 format
